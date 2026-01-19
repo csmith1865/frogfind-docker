@@ -1,17 +1,26 @@
-# Use official PHP Apache image
+# Use PHP with Apache
 FROM php:8.2-apache
 
-# Copy source code into container
-COPY . /var/www/html/
+# Install dependencies for Composer
+RUN apt-get update && apt-get install -y \
+    unzip \
+    git \
+    && rm -rf /var/lib/apt/lists/*
 
-# Enable Apache mod_rewrite (if needed)
-RUN a2enmod rewrite
+# Install Composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
+# Copy source code
+COPY . /var/www/html/
 
 # Set working directory
 WORKDIR /var/www/html/
 
-# Expose port (optional)
-EXPOSE 80
+# Run Composer install
+RUN composer install --no-dev --optimize-autoloader
 
-# Default command (from the base image)
-CMD ["apache2-foreground"]
+# Enable rewrite module if needed
+RUN a2enmod rewrite
+
+# Expose port
+EXPOSE 80
